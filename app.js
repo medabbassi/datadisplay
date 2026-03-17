@@ -43,16 +43,68 @@ var CHART_COLORS = [
 ];
 
 /* ============================================================
+   DARK MODE TOGGLE
+   ============================================================ */
+(function () {
+  var toggle  = document.getElementById('themeToggle');
+  var icon    = document.getElementById('themeIcon');
+  var stored  = localStorage.getItem('theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (icon) {
+      icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+    }
+    localStorage.setItem('theme', theme);
+    updateChartColors();
+  }
+
+  applyTheme(stored || (prefersDark ? 'dark' : 'light'));
+
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var current = document.documentElement.getAttribute('data-theme');
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+  }
+})();
+
+function isDark() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+
+function getGridColor() {
+  return isDark() ? '#334155' : '#f3f4f6';
+}
+
+function getTickColor() {
+  return isDark() ? '#94a3b8' : '#6b7280';
+}
+
+function getLineColor() {
+  return isDark() ? '#818cf8' : '#6366f1';
+}
+
+function getLineFill() {
+  return isDark() ? 'rgba(129,140,248,.1)' : 'rgba(99,102,241,.08)';
+}
+
+function getPieBorder() {
+  return isDark() ? '#1e293b' : '#ffffff';
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 async function init() {
   try {
     var response = await fetch(CSV_FILE);
-    if (!response.ok) throw new Error('Failed to load CSV (' + response.status + ')');
+    if (!response.ok) throw new Error('Echec du chargement du CSV (' + response.status + ')');
 
     var csvText = await response.text();
     var parsed  = parseCsv(csvText);
-    if (parsed.length < 2) throw new Error('CSV appears to be empty or invalid.');
+    if (parsed.length < 2) throw new Error('Le CSV semble vide ou invalide.');
 
     headers = parsed[0];
     allRows = parsed.slice(1).filter(function (row) {
@@ -65,7 +117,7 @@ async function init() {
     renderHeader(headers);
     renderRows(allRows);
     updateDashboard(allRows);
-    statusEl.textContent = 'Loaded ' + allRows.length.toLocaleString() + ' rows.';
+    statusEl.textContent = allRows.length.toLocaleString() + ' lignes chargees.';
   } catch (error) {
     statusEl.textContent = error.message;
   }
@@ -121,7 +173,7 @@ function aggregateTotals(rows, gi, vi) {
   if (gi < 0 || vi < 0) return [];
   var m = new Map();
   rows.forEach(function (r) {
-    var key = r[gi] || 'Unknown', amt = parseNumber(r[vi] || 0);
+    var key = r[gi] || 'Inconnu', amt = parseNumber(r[vi] || 0);
     m.set(key, (m.get(key) || 0) + amt);
   });
   return Array.from(m.entries());
@@ -133,13 +185,10 @@ function toPieSeries(entries, limit) {
   var sorted = entries.slice().sort(function (a, b) { return b[1] - a[1]; });
   var top = sorted.slice(0, limit);
   var rest = sorted.slice(limit).reduce(function (s, e) { return s + e[1]; }, 0);
-  if (rest > 0) top.push(['Other', rest]);
+  if (rest > 0) top.push(['Autre', rest]);
   return { labels: top.map(function (e) { return e[0]; }), values: top.map(function (e) { return e[1]; }) };
 }
 
-/* ============================================================
-   MONTHLY REVENUE AGGREGATION
-   ============================================================ */
 function aggregateMonthly(rows, dateIdx, revenueIdx) {
   if (dateIdx < 0 || revenueIdx < 0) return { labels: [], values: [] };
   var m = new Map();
@@ -152,14 +201,11 @@ function aggregateMonthly(rows, dateIdx, revenueIdx) {
   return { labels: sorted.map(function (e) { return e[0]; }), values: sorted.map(function (e) { return e[1]; }) };
 }
 
-/* ============================================================
-   STOCK MOVEMENT AGGREGATION
-   ============================================================ */
 function aggregateStockMovement(rows, movIdx) {
   if (movIdx < 0) return { labels: [], values: [] };
   var m = new Map();
   rows.forEach(function (r) {
-    var key = (r[movIdx] || 'Unknown').trim();
+    var key = (r[movIdx] || 'Inconnu').trim();
     m.set(key, (m.get(key) || 0) + 1);
   });
   var entries = Array.from(m.entries()).sort(function (a, b) { return b[1] - a[1]; });
@@ -167,7 +213,7 @@ function aggregateStockMovement(rows, movIdx) {
 }
 
 /* ============================================================
-   BLOCK 1 -- SUMMARY CARD
+   BLOC 1 -- RESUME
    ============================================================ */
 function renderSummary(cols, rows) {
   summaryRows.textContent = rows.length.toLocaleString();
@@ -179,7 +225,7 @@ function renderSummary(cols, rows) {
 
   if (dateIdx >= 0) {
     var dates = rows.map(function (r) { return r[dateIdx]; }).filter(Boolean).sort();
-    if (dates.length) summaryDates.textContent = dates[0] + ' to ' + dates[dates.length - 1];
+    if (dates.length) summaryDates.textContent = dates[0] + ' au ' + dates[dates.length - 1];
   }
   if (regionIdx >= 0) {
     summaryRegions.textContent = new Set(rows.map(function (r) { return r[regionIdx]; }).filter(Boolean)).size;
@@ -190,7 +236,7 @@ function renderSummary(cols, rows) {
 }
 
 /* ============================================================
-   BLOCK 2 -- SCHEMA TABLE
+   BLOC 2 -- SCHEMA
    ============================================================ */
 function detectType(colIdx, rows) {
   var sample = '', nonEmpty = 0, isNum = true, isDate = true, isID = true;
@@ -210,11 +256,11 @@ function detectType(colIdx, rows) {
   var uniques = new Set(rows.map(function (r) { return r[colIdx]; })).size;
 
   var typeName, typeClass;
-  if (isDate)      { typeName = 'Date';     typeClass = 'type-date'; }
-  else if (isID)   { typeName = 'ID';       typeClass = 'type-id'; }
-  else if (isNum)  { typeName = 'Number';   typeClass = 'type-number'; }
-  else if (uniques < rows.length * 0.05) { typeName = 'Category'; typeClass = 'type-category'; }
-  else             { typeName = 'Text';     typeClass = 'type-text'; }
+  if (isDate)      { typeName = 'Date';       typeClass = 'type-date'; }
+  else if (isID)   { typeName = 'Identifiant'; typeClass = 'type-id'; }
+  else if (isNum)  { typeName = 'Nombre';     typeClass = 'type-number'; }
+  else if (uniques < rows.length * 0.05) { typeName = 'Categorie'; typeClass = 'type-category'; }
+  else             { typeName = 'Texte';      typeClass = 'type-text'; }
 
   return { typeName: typeName, typeClass: typeClass, sample: sample, uniques: uniques, nonEmpty: fullNonEmpty };
 }
@@ -238,7 +284,7 @@ function renderSchema(cols, rows) {
 }
 
 /* ============================================================
-   BLOCK 3 -- KPI DASHBOARD
+   BLOC 3 -- KPIs
    ============================================================ */
 function updateDashboard(rows) {
   var ri  = findColumn(['Montant', 'Amount']);
@@ -273,33 +319,26 @@ function updateDashboard(rows) {
   metricProfit.textContent   = profit.toLocaleString(undefined, { maximumFractionDigits: 2 });
   metricMargin.textContent   = margin.toLocaleString(undefined, { maximumFractionDigits: 2 }) + '%';
 
-  /* rank lists */
   renderRankList(regionList,   topEntries(rows, rgi, ri, 5));
   renderRankList(categoryList, topEntries(rows, cti, ri, 5));
 
-  /* pie charts */
   regionPieChart   = renderChart(regionPieChart,   regionPieCanvas,   'pie',      toPieSeries(aggregateTotals(rows, rgi, ri), 7));
   categoryPieChart = renderChart(categoryPieChart, categoryPieCanvas, 'pie',      toPieSeries(aggregateTotals(rows, cti, ri), 7));
+  channelBarChart  = renderChart(channelBarChart,  channelBarCanvas,  'bar',      toPieSeries(aggregateTotals(rows, chi, ri), 10));
+  segmentBarChart  = renderChart(segmentBarChart,  segmentBarCanvas,  'bar',      toPieSeries(aggregateTotals(rows, sgi, ri), 10));
 
-  /* bar charts */
-  channelBarChart = renderChart(channelBarChart, channelBarCanvas, 'bar', toPieSeries(aggregateTotals(rows, chi, ri), 10));
-  segmentBarChart = renderChart(segmentBarChart, segmentBarCanvas, 'bar', toPieSeries(aggregateTotals(rows, sgi, ri), 10));
-
-  /* monthly revenue line chart */
   var monthly = aggregateMonthly(rows, dti, ri);
   revenueLineChart = renderLineChart(revenueLineChart, revenueLineCanvas, monthly);
 
-  /* stock movement doughnut */
   var stockData = aggregateStockMovement(rows, mvi);
   stockDoughnutChart = renderChart(stockDoughnutChart, stockDoughnutCanvas, 'doughnut', stockData);
 
-  /* top 10 products bar */
   var topProds = toPieSeries(aggregateTotals(rows, pni, ri), 10);
   topProductsBarChart = renderChart(topProductsBarChart, topProductsBarCanvas, 'bar', topProds);
 }
 
 /* ============================================================
-   CHARTS
+   GRAPHIQUES
    ============================================================ */
 function renderChart(chartRef, canvas, type, series) {
   if (!canvas || typeof Chart === 'undefined') return chartRef;
@@ -308,6 +347,12 @@ function renderChart(chartRef, canvas, type, series) {
   if (chartRef) {
     chartRef.data.labels = series.labels;
     chartRef.data.datasets[0].data = series.values;
+    chartRef.data.datasets[0].borderColor = (type === 'pie' || type === 'doughnut') ? getPieBorder() : series.values.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; });
+    if (chartRef.options.scales) {
+      if (chartRef.options.scales.x) { chartRef.options.scales.x.ticks.color = getTickColor(); }
+      if (chartRef.options.scales.y) { chartRef.options.scales.y.ticks.color = getTickColor(); chartRef.options.scales.y.grid.color = getGridColor(); }
+    }
+    if (chartRef.options.plugins.legend) { chartRef.options.plugins.legend.labels.color = getTickColor(); }
     chartRef.update();
     return chartRef;
   }
@@ -321,7 +366,7 @@ function renderChart(chartRef, canvas, type, series) {
       datasets: [{
         data: series.values,
         backgroundColor: series.values.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; }),
-        borderColor: isPie ? '#fff' : series.values.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; }),
+        borderColor: isPie ? getPieBorder() : series.values.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; }),
         borderWidth: isPie ? 2 : 0,
         borderRadius: isPie ? 0 : 6
       }]
@@ -335,12 +380,12 @@ function renderChart(chartRef, canvas, type, series) {
         legend: {
           display: isPie,
           position: 'bottom',
-          labels: { boxWidth: 10, padding: 12, font: { size: 11, family: 'Inter' } }
+          labels: { boxWidth: 10, padding: 12, color: getTickColor(), font: { size: 11, family: 'Inter' } }
         }
       },
       scales: type === 'bar' ? {
-        x: { ticks: { font: { size: 11, family: 'Inter' } }, grid: { display: false } },
-        y: { ticks: { font: { size: 11, family: 'Inter' } }, grid: { color: '#f3f4f6' } }
+        x: { ticks: { color: getTickColor(), font: { size: 11, family: 'Inter' } }, grid: { display: false } },
+        y: { ticks: { color: getTickColor(), font: { size: 11, family: 'Inter' } }, grid: { color: getGridColor() } }
       } : undefined
     }
   });
@@ -353,6 +398,12 @@ function renderLineChart(chartRef, canvas, series) {
   if (chartRef) {
     chartRef.data.labels = series.labels;
     chartRef.data.datasets[0].data = series.values;
+    chartRef.data.datasets[0].borderColor = getLineColor();
+    chartRef.data.datasets[0].backgroundColor = getLineFill();
+    chartRef.data.datasets[0].pointBackgroundColor = getLineColor();
+    chartRef.options.scales.x.ticks.color = getTickColor();
+    chartRef.options.scales.y.ticks.color = getTickColor();
+    chartRef.options.scales.y.grid.color = getGridColor();
     chartRef.update();
     return chartRef;
   }
@@ -362,14 +413,14 @@ function renderLineChart(chartRef, canvas, series) {
     data: {
       labels: series.labels,
       datasets: [{
-        label: 'Revenue',
+        label: 'CA',
         data: series.values,
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99,102,241,.08)',
+        borderColor: getLineColor(),
+        backgroundColor: getLineFill(),
         borderWidth: 2.5,
         pointRadius: 3,
-        pointBackgroundColor: '#6366f1',
-        pointBorderColor: '#fff',
+        pointBackgroundColor: getLineColor(),
+        pointBorderColor: getPieBorder(),
         pointBorderWidth: 2,
         fill: true,
         tension: 0.3
@@ -378,23 +429,40 @@ function renderLineChart(chartRef, canvas, series) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { font: { size: 11, family: 'Inter' }, maxRotation: 45 }, grid: { display: false } },
-        y: { ticks: { font: { size: 11, family: 'Inter' } }, grid: { color: '#f3f4f6' } }
+        x: { ticks: { color: getTickColor(), font: { size: 11, family: 'Inter' }, maxRotation: 45 }, grid: { display: false } },
+        y: { ticks: { color: getTickColor(), font: { size: 11, family: 'Inter' } }, grid: { color: getGridColor() } }
       }
     }
   });
 }
 
+/* Re-render all existing charts when theme changes */
+function updateChartColors() {
+  if (!allRows.length) return;
+  /* Destroy all chart instances so they get rebuilt with new colors */
+  [regionPieChart, categoryPieChart, channelBarChart, segmentBarChart,
+   revenueLineChart, stockDoughnutChart, topProductsBarChart].forEach(function (c) {
+    if (c) c.destroy();
+  });
+  regionPieChart = categoryPieChart = channelBarChart = segmentBarChart = undefined;
+  revenueLineChart = stockDoughnutChart = topProductsBarChart = undefined;
+  updateDashboard(getCurrentRows());
+}
+
+function getCurrentRows() {
+  var q = searchInput.value.trim().toLowerCase();
+  if (!q) return allRows;
+  return allRows.filter(function (r) { return r.join(' ').toLowerCase().indexOf(q) !== -1; });
+}
+
 /* ============================================================
-   RANK LISTS
+   CLASSEMENTS
    ============================================================ */
 function renderRankList(el, items) {
   el.innerHTML = '';
-  if (!items.length) { el.innerHTML = '<li>No data.</li>'; return; }
+  if (!items.length) { el.innerHTML = '<li>Aucune donnee.</li>'; return; }
   var frag = document.createDocumentFragment();
   items.forEach(function (entry, i) {
     var li  = document.createElement('li');
@@ -412,7 +480,7 @@ function renderRankList(el, items) {
 }
 
 /* ============================================================
-   DATA TABLE
+   TABLEAU
    ============================================================ */
 function renderHeader(cols) {
   tableHead.innerHTML = '';
@@ -442,20 +510,20 @@ function renderRows(rows) {
 }
 
 /* ============================================================
-   SEARCH / FILTER
+   RECHERCHE / FILTRE
    ============================================================ */
 function filterRows(query) {
   var q = query.trim().toLowerCase();
   if (!q) {
     renderRows(allRows);
     updateDashboard(allRows);
-    statusEl.textContent = 'Loaded ' + allRows.length.toLocaleString() + ' rows.';
+    statusEl.textContent = allRows.length.toLocaleString() + ' lignes chargees.';
     return;
   }
   var filtered = allRows.filter(function (r) { return r.join(' ').toLowerCase().indexOf(q) !== -1; });
   renderRows(filtered);
   updateDashboard(filtered);
-  statusEl.textContent = 'Showing ' + filtered.length.toLocaleString() + ' of ' + allRows.length.toLocaleString() + ' rows.';
+  statusEl.textContent = filtered.length.toLocaleString() + ' sur ' + allRows.length.toLocaleString() + ' lignes.';
 }
 
 var filterTimer;
@@ -465,7 +533,7 @@ searchInput.addEventListener('input', function (e) {
 });
 
 /* ============================================================
-   NAVBAR -- active link tracking + mobile toggle
+   NAVBAR -- suivi du lien actif + menu mobile
    ============================================================ */
 (function () {
   var links = document.querySelectorAll('.topbar-link');
@@ -495,15 +563,13 @@ searchInput.addEventListener('input', function (e) {
   var toggle = document.getElementById('navToggle');
   var nav    = document.getElementById('topbarNav');
   if (toggle && nav) {
-    toggle.addEventListener('click', function () {
-      nav.classList.toggle('open');
-    });
+    toggle.addEventListener('click', function () { nav.classList.toggle('open'); });
     nav.addEventListener('click', function (e) {
       if (e.target.closest('.topbar-link')) nav.classList.remove('open');
     });
   }
 })();
 
-/* ---- GO ---- */
+/* ---- DEMARRAGE ---- */
 init();
 
