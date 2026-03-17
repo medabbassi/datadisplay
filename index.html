@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Analytics Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-brand">
+          <span class="brand-icon"><i class="bi bi-bar-chart-line-fill"></i></span>
+          <span class="brand-text">DataDisplay</span>
+        </div>
+        <ul class="topbar-nav" id="topbarNav">
+          <li><a href="#about" class="topbar-link active"><i class="bi bi-house-door"></i>Overview</a></li>
+          <li><a href="#schema" class="topbar-link"><i class="bi bi-table"></i>Schema</a></li>
+          <li><a href="#kpis" class="topbar-link"><i class="bi bi-speedometer2"></i>KPIs</a></li>
+          <li><a href="#charts" class="topbar-link"><i class="bi bi-pie-chart"></i>Charts</a></li>
+          <li><a href="#data" class="topbar-link"><i class="bi bi-database"></i>Data</a></li>
+        </ul>
+        <button class="topbar-toggle" id="navToggle" aria-label="Toggle navigation">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+    </nav>
+
+    <main>
+
+      <!-- ===== BLOCK 1 : ABOUT THE DATA ===== -->
+      <section id="about" class="section">
+        <div class="container">
+          <div class="hero-grid">
+            <div class="hero-content">
+              <span class="tremor-badge badge-blue">About This Project</span>
+              <h1 class="hero-title">Sales Analytics Dashboard</h1>
+              <p class="hero-lead">
+                A comprehensive view of <strong>20,000 unified sales transactions</strong> sourced from
+                <code>ventes_unified_20k.csv</code>. This dashboard helps stakeholders explore revenue
+                streams, identify top-performing regions and product categories, monitor stock movements,
+                and understand customer segments -- all from a single, interactive page.
+              </p>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <div class="feature-icon icon-blue"><i class="bi bi-bullseye"></i></div>
+                  <div>
+                    <strong>Purpose</strong>
+                    <p>Transform raw CSV data into actionable business insights without any backend.</p>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <div class="feature-icon icon-emerald"><i class="bi bi-lightning-charge"></i></div>
+                  <div>
+                    <strong>Technology</strong>
+                    <p>Pure HTML, CSS, and JavaScript. No frameworks, no server-side processing.</p>
+                  </div>
+                </div>
+                <div class="feature-item">
+                  <div class="feature-icon icon-violet"><i class="bi bi-shield-check"></i></div>
+                  <div>
+                    <strong>Privacy</strong>
+                    <p>All data stays in your browser. Nothing is uploaded or tracked externally.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hero-aside">
+              <div class="tremor-card card-dark">
+                <h3 class="card-heading">Dataset at a Glance</h3>
+                <ul class="glance-list">
+                  <li><span class="gl-label">Source File</span><span class="gl-value" id="summaryFile">ventes_unified_20k.csv</span></li>
+                  <li><span class="gl-label">Total Rows</span><span class="gl-value" id="summaryRows">--</span></li>
+                  <li><span class="gl-label">Total Columns</span><span class="gl-value" id="summaryCols">--</span></li>
+                  <li><span class="gl-label">Date Range</span><span class="gl-value" id="summaryDates">--</span></li>
+                  <li><span class="gl-label">Regions Covered</span><span class="gl-value" id="summaryRegions">--</span></li>
+                  <li><span class="gl-label">Product Categories</span><span class="gl-value" id="summaryCategories">--</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BLOCK 2 : DATA SCHEMA / TYPES ===== -->
+      <section id="schema" class="section section-muted">
+        <div class="container">
+          <span class="tremor-badge badge-emerald">Data Structure</span>
+          <h2 class="section-title">Column Schema & Data Types</h2>
+          <p class="section-lead">
+            Each row in the dataset represents a single sales transaction. Below is the detected schema
+            showing every column, its inferred data type, a sample value, and the number of unique entries.
+          </p>
+          <div class="tremor-card">
+            <div class="schema-table-wrap">
+              <table class="tremor-table" id="schemaTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Column Name</th>
+                    <th>Detected Type</th>
+                    <th>Sample Value</th>
+                    <th>Unique Values</th>
+                    <th>Non-Empty</th>
+                  </tr>
+                </thead>
+                <tbody id="schemaBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BLOCK 3 : KPIs ===== -->
+      <section id="kpis" class="section">
+        <div class="container">
+          <span class="tremor-badge badge-amber">Key Performance Indicators</span>
+          <h2 class="section-title">Business Metrics Overview</h2>
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-blue"></div>
+              <div class="kpi-icon icon-blue"><i class="bi bi-receipt-cutoff"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Total Transactions</span>
+                <span class="kpi-number" id="metricRows">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-emerald"></div>
+              <div class="kpi-icon icon-emerald"><i class="bi bi-cash-stack"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Total Revenue</span>
+                <span class="kpi-number" id="metricRevenue">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-cyan"></div>
+              <div class="kpi-icon icon-cyan"><i class="bi bi-box-seam-fill"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Items Sold</span>
+                <span class="kpi-number" id="metricQuantity">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-amber"></div>
+              <div class="kpi-icon icon-amber"><i class="bi bi-tag-fill"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Avg. Unit Price</span>
+                <span class="kpi-number" id="metricAvgPrice">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-rose"></div>
+              <div class="kpi-icon icon-rose"><i class="bi bi-people-fill"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Unique Clients</span>
+                <span class="kpi-number" id="metricClients">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-violet"></div>
+              <div class="kpi-icon icon-violet"><i class="bi bi-cpu-fill"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Unique Products</span>
+                <span class="kpi-number" id="metricProducts">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-slate"></div>
+              <div class="kpi-icon icon-slate"><i class="bi bi-wallet-fill"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Gross Profit</span>
+                <span class="kpi-number" id="metricProfit">0</span>
+              </div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-decorator kpi-deco-emerald"></div>
+              <div class="kpi-icon icon-emerald"><i class="bi bi-percent"></i></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Gross Margin</span>
+                <span class="kpi-number" id="metricMargin">0%</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BLOCK 4 : CHARTS & RANKINGS ===== -->
+      <section id="charts" class="section section-muted">
+        <div class="container">
+          <span class="tremor-badge badge-violet">Visual Analytics</span>
+          <h2 class="section-title">Charts & Top Rankings</h2>
+
+          <!-- Row 1 : full-width line chart -->
+          <div class="tremor-card chart-full">
+            <h3 class="panel-title"><i class="bi bi-graph-up me-2"></i>Monthly Revenue Trend</h3>
+            <div class="chart-wrap chart-wide"><canvas id="revenueLine"></canvas></div>
+          </div>
+
+          <!-- Row 2 : 2x2 charts -->
+          <div class="charts-grid">
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-pie-chart-fill me-2"></i>Revenue by Region</h3>
+              <div class="chart-wrap"><canvas id="regionPie"></canvas></div>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-pie-chart-fill me-2"></i>Revenue by Category</h3>
+              <div class="chart-wrap"><canvas id="categoryPie"></canvas></div>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-bar-chart-fill me-2"></i>Revenue by Channel</h3>
+              <div class="chart-wrap"><canvas id="channelBar"></canvas></div>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-bar-chart-fill me-2"></i>Revenue by Segment</h3>
+              <div class="chart-wrap"><canvas id="segmentBar"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Row 3 : additional charts + rankings -->
+          <div class="charts-grid">
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-box-arrow-in-down me-2"></i>Stock Movement</h3>
+              <div class="chart-wrap"><canvas id="stockDoughnut"></canvas></div>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-star-fill me-2"></i>Top 10 Products</h3>
+              <div class="chart-wrap"><canvas id="topProductsBar"></canvas></div>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-trophy-fill me-2"></i>Top 5 Regions</h3>
+              <ul id="regionList" class="rank-list"></ul>
+            </div>
+            <div class="tremor-card">
+              <h3 class="panel-title"><i class="bi bi-trophy-fill me-2"></i>Top 5 Categories</h3>
+              <ul id="categoryList" class="rank-list"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BLOCK 5 : DATA TABLE ===== -->
+      <section id="data" class="section">
+        <div class="container">
+          <span class="tremor-badge badge-slate">Raw Data Explorer</span>
+          <h2 class="section-title">Transaction Records</h2>
+          <div class="tremor-card">
+            <div class="table-controls">
+              <div class="search-box">
+                <label for="searchInput" class="visually-hidden">Search</label>
+                <i class="bi bi-search"></i>
+                <input id="searchInput" type="text" placeholder="Search any column..." />
+              </div>
+              <output id="status" class="status-pill">Loading data...</output>
+            </div>
+            <div class="table-wrapper">
+              <table class="tremor-table" id="dataTable">
+                <thead id="tableHead">
+                  <tr><th scope="col">Loading...</th></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>DataDisplay -- Sales Analytics Dashboard</span>
+        <span>Built with HTML, CSS, JS, Chart.js</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
+

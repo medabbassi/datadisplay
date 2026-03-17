@@ -1,0 +1,11 @@
+{
+  "name": "datadisplay",
+  "version": "1.0.0",
+  "description": "Static CSV data viewer",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "smoke": "node -e \"require('fs').accessSync('index.html'); require('fs').accessSync('styles.css'); require('fs').accessSync('app.js'); console.log('smoke ok')\""
+  },
+  "private": true
+}
