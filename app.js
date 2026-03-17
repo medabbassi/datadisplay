@@ -14,6 +14,17 @@ var metricClients     = document.getElementById('metricClients');
 var metricProducts    = document.getElementById('metricProducts');
 var metricProfit      = document.getElementById('metricProfit');
 var metricMargin      = document.getElementById('metricMargin');
+var metricAvgBasket   = document.getElementById('metricAvgBasket');
+var metricTotalCost   = document.getElementById('metricTotalCost');
+var metricAvgDaily    = document.getElementById('metricAvgDaily');
+var metricRegions     = document.getElementById('metricRegions');
+var metricChannels    = document.getElementById('metricChannels');
+var metricSegments    = document.getElementById('metricSegments');
+var metricAvgQty      = document.getElementById('metricAvgQty');
+var metricMaxTx       = document.getElementById('metricMaxTx');
+var metricMinTx       = document.getElementById('metricMinTx');
+var metricMedian      = document.getElementById('metricMedian');
+var metricRevenuePerClient = document.getElementById('metricRevenuePerClient');
 var regionList        = document.getElementById('regionList');
 var categoryList      = document.getElementById('categoryList');
 var regionPieCanvas   = document.getElementById('regionPie');
@@ -318,6 +329,42 @@ function updateDashboard(rows) {
   metricProducts.textContent = products.toLocaleString();
   metricProfit.textContent   = profit.toLocaleString(undefined, { maximumFractionDigits: 2 });
   metricMargin.textContent   = margin.toLocaleString(undefined, { maximumFractionDigits: 2 }) + '%';
+
+  /* --- new KPIs --- */
+  var avgBasket = rows.length ? revenue / rows.length : 0;
+  metricAvgBasket.textContent = avgBasket.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  metricTotalCost.textContent = costSum.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  var uniqueDays = dti >= 0 ? new Set(rows.map(function (r) { return r[dti]; }).filter(Boolean)).size : 1;
+  var avgDaily = uniqueDays ? revenue / uniqueDays : 0;
+  metricAvgDaily.textContent = avgDaily.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  var regions  = rgi >= 0 ? new Set(rows.map(function (r) { return r[rgi]; }).filter(Boolean)).size : 0;
+  metricRegions.textContent = regions.toLocaleString();
+
+  var channels = chi >= 0 ? new Set(rows.map(function (r) { return r[chi]; }).filter(Boolean)).size : 0;
+  metricChannels.textContent = channels.toLocaleString();
+
+  var segments = sgi >= 0 ? new Set(rows.map(function (r) { return r[sgi]; }).filter(Boolean)).size : 0;
+  metricSegments.textContent = segments.toLocaleString();
+
+  var avgQty = rows.length ? quantity / rows.length : 0;
+  metricAvgQty.textContent = avgQty.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  var amounts = ri >= 0 ? rows.map(function (r) { return parseNumber(r[ri] || 0); }) : [];
+  var maxTx = amounts.length ? Math.max.apply(null, amounts) : 0;
+  var minTx = amounts.length ? Math.min.apply(null, amounts) : 0;
+  metricMaxTx.textContent = maxTx.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  metricMinTx.textContent = minTx.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  var sorted = amounts.slice().sort(function (a, b) { return a - b; });
+  var mid = Math.floor(sorted.length / 2);
+  var median = sorted.length ? (sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2) : 0;
+  metricMedian.textContent = median.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  var revPerClient = clients > 0 ? revenue / clients : 0;
+  metricRevenuePerClient.textContent = revPerClient.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   renderRankList(regionList,   topEntries(rows, rgi, ri, 5));
   renderRankList(categoryList, topEntries(rows, cti, ri, 5));
