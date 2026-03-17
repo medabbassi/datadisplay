@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "build": "node build.js",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev",
     "smoke": "node -e \"require('fs').accessSync('index.html'); require('fs').accessSync('styles.css'); require('fs').accessSync('app.js'); console.log('smoke ok')\""
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   },
   "private": true
 }
